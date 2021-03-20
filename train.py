@@ -1,64 +1,43 @@
 import os
+import warnings
+import sys
+import numpy as np
 import pandas as pd
-# Databricks notebook source
-from sklearn.datasets import load_iris
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.model_selection import train_test_split
-from sklearn import metrics
-import mlflow
-import mlflow.sklearn
+import seaborn as sns
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from sklearn.decomposition import PCA
 
-#data = load_iris()
 
-iris_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "iris.csv")
-data = pd.read_csv(iris_path)
+import mlflow.sklearn
+from sklearn import metrics #for checking the model accuracy
+from sklearn.linear_model import LogisticRegression  # for Logistic Regression algorithm
+from sklearn.model_selection import train_test_split #to split the dataset for training and testing
+from sklearn.neighbors import KNeighborsClassifier  # for K nearest neighbours
+from sklearn import svm  #for Support Vector Machine (SVM) Algorithm
+from sklearn.tree import DecisionTreeClassifier #for using Decision Tree Algoithm
 
-X = data.data
-Y = data.target
 
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.25, random_state=10)
-
-x_min, x_max = X[:, 0].min() - .5, X[:, 0].max() + .5
-y_min, y_max = X[:, 1].min() - .5, X[:, 1].max() + .5
-plt.figure(2, figsize=(8,6))
-plt.clf()
-plt.scatter(X[:, 0], X[:, 1], c = Y, cmap = plt.cm.Set1, edgecolor = 'k')
-plt.xlabel('Sepal length')
-plt.ylabel('Sepal width')
-plt.xlim(x_min, x_max)
-plt.ylim(y_min, y_max)
-plt.xticks(())
-plt.yticks(())
-
-fig = plt.figure(1, figsize=(8,6))
-ax = Axes3D(fig ,elev = -150, azim = 110)
-X_reduced = PCA(n_components = 3).fit_transform(data.data)
-ax.scatter(X_reduced[:, 0], X_reduced[:, 1], X_reduced[:, 2], c= Y, cmap = plt.cm.Set1, edgecolor = 'k', s = 40)
-ax.set_title("3 PCA Directions")
-ax.set_xlabel("1st eigenvector")
-ax.w_xaxis.set_ticklabels([])
-ax.set_ylabel("2nd eigenvector")
-ax.w_yaxis.set_ticklabels([])
-ax.set_zlabel("3rd eigenvector")
-ax.w_zaxis.set_ticklabels([])
-
-fig.savefig('iris1.png')
 
 if __name__ == "__main__":
   with mlflow.start_run():
-    dtc = DecisionTreeClassifier(random_state = 10)
-    dtc.fit(X_train, Y_train)
-    y_pred_class = dtc.predict(X_test)
-    accuracy = metrics.accuracy_score(Y_test, y_pred_class)
+    iris_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "iris.csv")
+    data = pd.read_csv(iris_path)
+
+    train, test = train_test_split(data, test_size = 0.3)# in this our main data is split into train and test
+    # the attribute test_size=0.3 splits the data into 70% and 30% ratio. train=70% and test=30%
+    #print(train.shape)
+    #print(test.shape)
+
+    train_X = train[['sepal_length','sepal_width','petal_length','petal_width']]# taking the training data features
+    train_y=train.species# output of our training data
+    test_X= test[['sepal_length','sepal_width','petal_length','petal_width']] # taking test data features
+    test_y =test.species   #output value of test data
+    model = svm.SVC() #select the algorithm
+    model.fit(train_X,train_y) # we train the algorithm with the training data and the training output
+    prediction=model.predict(test_X) #now we pass the testing data to the trained algorithm
+    accuracy = metrics.accuracy_score(prediction,test_y)
     print(accuracy)
     
-    mlflow.log_param("random_state", 10)
     mlflow.log_metric("accuracy", accuracy)
-    mlflow.sklearn.log_model(dtc, "model")
-    modelpath = "/dbfs/mlflow/iris/model-%s-%f" % ("decision_tree", 1)
-    mlflow.sklearn.save_model(dtc, modelpath)
-    mlflow.log_artifact("iris1.png")
+    mlflow.sklearn.log_model(model, "model")
+    modelpath = "/dbfs/mlflow/iris/model-%s-%f" % ("svm", 1)
+    mlflow.sklearn.save_model(model, modelpath)
