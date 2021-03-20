@@ -1,3 +1,5 @@
+import os
+import pandas as pd
 # Databricks notebook source
 from sklearn.datasets import load_iris
 from sklearn.tree import DecisionTreeClassifier
@@ -10,7 +12,10 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.decomposition import PCA
 
-data = load_iris()
+#data = load_iris()
+
+iris_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "iris.csv")
+data = pd.read_csv(iris_path)
 
 X = data.data
 Y = data.target
