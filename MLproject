@@ -1,4 +1,4 @@
-name: ML with IRIS
+name: MLonIRIS
 
 conda_env: conda.yaml
 
